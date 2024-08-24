@@ -1,4 +1,4 @@
-from fastapi import FastAPI , status;
+from fastapi import FastAPI , status , HTTPException;
 from pydantic import BaseModel;
 import psycopg
 
@@ -42,5 +42,58 @@ def create_posts(post: Post):
     conn.commit()
     
     return {"data" : new_post_dict}
+
+# Get a single post
+@app.get("/posts/{id}")
+def get_post(id: int):
+    cursor.execute("SELECT * FROM products WHERE id = %s", (id,))
+    new_post = cursor.fetchone()
+
+    if not new_post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    
+    column_name = [desc[0] for desc in cursor.description]
+    social_media_post = dict(zip(column_name, new_post))
+    
+    return {"data": social_media_post}
+
+# Delete a single post 
+@app.delete("/posts/{id}")
+def deleted_post(id: int):
+    
+    cursor.execute("DELETE FROM products WHERE id = %s RETURNING *" , (id,))
+    new_post_deleted_row = cursor.fetchone()
+    
+    if not new_post_deleted_row:
+        
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    
+    conn.commit()
+    
+    
+    column_name = [desc[0] for desc in cursor.description]
+    social_media_post_deleted = dict(zip(column_name, new_post_deleted_row))
+    
+    return {"data" : social_media_post_deleted} 
+
+# Update a single post
+@app.put("/posts/{id}")
+
+def update_post(id: int , post: Post):
+    
+    cursor.execute("UPDATE products SET name = %s , price = %s , inventory = %s WHERE id = %s RETURNING *" , (post.name , post.price , post.inventory , id))
+    updated_post = cursor.fetchone()
+    print(updated_post)
+    
+    conn.commit()
+    
+    column_name = [desc[0] for desc in cursor.description]
+    social_media_post_updated = dict(zip(column_name, updated_post))
+    
+    return {"data" : social_media_post_updated}
+    
+
+    
+    
     
 
