@@ -1,8 +1,17 @@
 from fastapi import FastAPI , status , HTTPException;
 from pydantic import BaseModel;
+from fastapi.middleware.cors import CORSMiddleware
 import psycopg
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Post(BaseModel):
     name: str
@@ -25,6 +34,8 @@ def get_posts():
     
     cursor.execute("SELECT * FROM products")
     new_posts_rows = cursor.fetchall()
+    print(new_posts_rows)
+    
     column_name =  [desc[0] for desc in cursor.description]
     social_media_posts = [dict(zip(column_name , new_posts_row)) for new_posts_row in new_posts_rows]
     
@@ -83,7 +94,7 @@ def update_post(id: int , post: Post):
     
     cursor.execute("UPDATE products SET name = %s , price = %s , inventory = %s WHERE id = %s RETURNING *" , (post.name , post.price , post.inventory , id))
     updated_post = cursor.fetchone()
-    print(updated_post)
+    
     
     conn.commit()
     
